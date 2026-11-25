@@ -1,0 +1,12 @@
+{
+  // Type-checks the starter templates and `miso template` with the app's own compiler settings. cli/template.test.ts
+  // runs `tsc --noEmit -p template`, so `bun run test` covers it. The patterns name `.miso`
+  // because a `**` pattern skips folders that start with a dot.
+  "extends": "../app/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "rootDirs": [".."]
+  },
+  "include": ["./spaces/*/.miso/**/*.ts", "./spaces/*/.miso/**/*.tsx", "../cli/template.ts", "../cli/template.test.ts"],
+  "exclude": []
+}

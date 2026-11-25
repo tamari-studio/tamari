@@ -1,0 +1,21 @@
+# Never upload machine-local state, installs, build output or secrets. The
+# Vercel project's own env vars replace any local .env.
+/data
+/logs
+/dist
+/dist.next
+/dist.old
+/.vercel
+node_modules
+.build
+.cache
+.scratchpad
+*.db
+*.db-shm
+*.db-wal
+*.log
+.env
+.env.*
+workspaces/*/.env
+workspaces/*/.env.local
+workspaces/*/.shots

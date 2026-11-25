@@ -1,0 +1,15 @@
+# What the image build never needs, and what must never reach it: keys, installs, and the Mac-local
+# copies of the shell. Written next to the Dockerfile as .dockerignore.
+.git
+.github
+.env
+.env.*
+**/.env
+**/.env.*
+.miso/shell
+.miso/shell.next
+.miso/shell.prev
+.miso/vercel
+**/node_modules
+**/.DS_Store
+**/.shots

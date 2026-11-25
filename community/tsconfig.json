@@ -1,0 +1,12 @@
+{
+  // Type-checks the community spaces that need nothing but the shell's own packages. cli/community.test.ts
+  // runs `tsc --noEmit -p community`. The patterns name `.miso` because a `**` pattern skips folders
+  // that start with a dot. pr-writer and newsletter bring their own packages: tsconfig.deps.json.
+  "extends": "../app/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "rootDirs": [".."]
+  },
+  "include": ["./*/.miso/**/*.ts", "./*/.miso/**/*.tsx"],
+  "exclude": ["./pr-writer/**", "./newsletter/**", "**/node_modules/**"]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@miso/dto-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Member tiers and the Supabase session broker the app shell uses. Server-side session code; tier is safe in a .tsx.",
+  "exports": {
+    "./session": "./session.ts",
+    "./tier": "./tier.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "newsletter",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.134.0",
+    "canvas": "file:./stubs/canvas",
+    "defuddle": "^0.19.6",
+    "fast-xml-parser": "^5.2.0",
+    "linkedom": "^0.18.12"
+  }
+}

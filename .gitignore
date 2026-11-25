@@ -1,0 +1,23 @@
+node_modules/
+/dist/
+/dist.next/
+/dist.old/
+/api/_generated/
+/api/_generated.next/
+/api/_generated.old/
+/app/.generated/
+/.vercel/
+.env
+.env.*
+**/.DS_Store
+
+# agent working state (per worktree, never committed)
+.agent/
+.claude/worktrees/
+!.env.example
+
+# a sample repo's spaces and records, put here before the image build (selfhost/README.md, "A sample repo")
+/selfhost/seed/
+
+# `bun install` in a community space's .miso folder (community/README.md) makes a lock file; the shell installs without one
+community/**/bun.lock

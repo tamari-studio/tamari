@@ -1,0 +1,10 @@
+{
+  "name": "space-vault",
+  "private": true,
+  "dependencies": {
+    "diff": "^9.0.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "yaml": "^2.9.1"
+  }
+}

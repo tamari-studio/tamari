@@ -1,0 +1,13 @@
+{
+  "name": "@miso/store",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared records any space can read and write, kept in the miso schema of the shared Supabase project. Server-side only.",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0"
+  }
+}

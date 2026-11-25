@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "../node_modules/.cache/tsc/app.tsbuildinfo",
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": false,
+    "types": ["bun"],
+    // api/server.ts imports the build's api/_generated/server-entry.js; types/ stands in for it before a build.
+    "rootDirs": ["..", "./types"]
+  },
+  "include": ["./**/*.ts", "./**/*.tsx", "../api/server.ts", "../scripts/**/*.ts", "../packages/**/*.ts"],
+  "exclude": ["./vendor/**", "./.generated/**"]
+}

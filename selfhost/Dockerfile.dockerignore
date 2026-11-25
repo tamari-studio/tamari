@@ -1,0 +1,18 @@
+# What the app image never needs, and what must never reach it: keys (selfhost/.env above all),
+# installs and build output. Docker reads this file because it sits next to selfhost/Dockerfile.
+.git
+.github
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.DS_Store
+dist
+dist.*
+api/_generated
+api/_generated.*
+app/.generated
+.agent
+.claude

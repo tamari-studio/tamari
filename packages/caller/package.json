@@ -1,0 +1,10 @@
+{
+  "name": "@miso/caller",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Who is calling a space's server function: the verified member the hosted app passes in. Server-side only.",
+  "exports": {
+    ".": "./index.ts"
+  }
+}

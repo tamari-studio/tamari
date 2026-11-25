@@ -1,0 +1,7 @@
+{
+  "name": "pr-writer",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.134.0"
+  }
+}

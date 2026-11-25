@@ -1,0 +1,42 @@
+# The gateway: one address for the app and its Supabase. Each Supabase service checks the key or
+# session token itself (Auth, PostgREST and Realtime all verify it with JWT_SECRET), so the gateway
+# only routes. Realtime's admin API (/api) is not routed at all.
+_format_version: '2.1'
+_transform: true
+
+services:
+  - name: auth
+    url: http://auth:9999/
+    routes:
+      - name: auth
+        strip_path: true
+        paths: [/auth/v1/]
+
+  - name: rest
+    url: http://rest:3000/
+    routes:
+      - name: rest
+        strip_path: true
+        paths: [/rest/v1/]
+
+  - name: realtime
+    url: http://realtime-dev.supabase-realtime:4000/socket
+    protocol: ws
+    routes:
+      - name: realtime
+        strip_path: true
+        paths: [/realtime/v1/]
+
+  # Everything else is the app. Not buffered and with long timeouts, so a streamed answer (the MCP
+  # endpoint) reaches the client as it comes.
+  - name: app
+    url: http://app:13380
+    read_timeout: 3600000
+    write_timeout: 3600000
+    routes:
+      - name: app
+        strip_path: false
+        preserve_host: true
+        response_buffering: false
+        request_buffering: false
+        paths: [/]

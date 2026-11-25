@@ -1,0 +1,4 @@
+[install]
+# The build resolves bare imports from the root node_modules, so keep packages hoisted
+# (bun defaults to the isolated layout once package.json has workspaces).
+linker = "hoisted"

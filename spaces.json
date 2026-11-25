@@ -1,0 +1,10 @@
+{
+  "$comment": "The spaces this app shows, in sidebar order. Each is a folder in workspaces/ with its views and widgets in .miso/. `id` never changes (tabs and layouts point at it); `slug` is the URL and can change, with old ones kept in previousSlugs. minTier (owner, admin, manager, member) hides a space from anyone below that tier.",
+  "spaces": [
+    {
+      "folder": "miso",
+      "id": "miso",
+      "slug": "miso"
+    }
+  ]
+}

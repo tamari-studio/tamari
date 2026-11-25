@@ -1,0 +1,123 @@
+# The gate docs/releasing.md asks for, run on every pull request and every push to main:
+# typecheck, tests, build. A tag is only cut from a main that passed it.
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run build
+
+  # Every migration applied from scratch to a real Postgres, then the SQL checks against it.
+  db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DB: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.1.0
+      # Database only (no Auth, API or Studio): applies supabase/migrations/ in order.
+      - run: supabase db start
+      - name: The newest migration ran
+        run: psql "$DB" -v ON_ERROR_STOP=1 -tAc "select count(*) from pg_proc where pronamespace = 'miso'::regnamespace and proname = 'rename_space'" | grep -qx 1
+      - name: supabase/checks/departments.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/departments.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/subspaces.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/subspaces.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/member-position.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/member-position.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/org-settings.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/org-settings.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/allowed-domains.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/allowed-domains.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/invitations.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/invitations.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/space-rename.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/space-rename.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/space-symbol.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/space-symbol.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/manual-spaces.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/manual-spaces.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/setup-repair.sql (every line ok)
+        run: |
+          out=$(psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/setup-repair.sql)
+          echo "$out"
+          bad=$(echo "$out" | grep -v '^$' | grep -v '^ok ' || true)
+          [ -z "$bad" ] || { echo "::error::not every check passed: $bad"; exit 1; }
+          echo "$out" | grep -q '^ok '
+      - name: supabase/checks/usage-events.sql
+        run: psql "$DB" -v ON_ERROR_STOP=1 -qtA -f supabase/checks/usage-events.sql | tee out.txt && grep -q 'all passed' out.txt
+      - name: Two owners demoting each other at once leave one owner
+        run: bash supabase/checks/last-owner-race.sh

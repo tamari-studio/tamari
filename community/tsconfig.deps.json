@@ -1,0 +1,12 @@
+{
+  // The community spaces with packages of their own (their .miso/package.json). They only
+  // type-check after `bun install` in each .miso folder, so cli/community.test.ts runs this
+  // config only when that has been done.
+  "extends": "../app/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "rootDirs": [".."]
+  },
+  "include": ["./pr-writer/.miso/**/*.ts", "./pr-writer/.miso/**/*.tsx", "./newsletter/.miso/**/*.ts", "./newsletter/.miso/**/*.tsx"],
+  "exclude": ["**/node_modules/**"]
+}

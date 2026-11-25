@@ -1,0 +1,7 @@
+{
+  "name": "canvas",
+  "version": "0.0.0-miso-stub",
+  "private": true,
+  "description": "Stands in for the optional native canvas package that linkedom tries to load. Throwing makes linkedom use its own shim, and the hosted build bundles this file, so no bare require(\"canvas\") is left for Bun to auto-install at runtime (a fatal EROFS on Vercel).",
+  "main": "index.js"
+}

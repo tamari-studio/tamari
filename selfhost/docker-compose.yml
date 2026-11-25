@@ -1,0 +1,186 @@
+# Tamari with its own Supabase, on one machine. Start it with ./install.sh (README.md here).
+#
+# One address serves everything: the gateway (kong) sends /auth/v1, /rest/v1 and /realtime/v1 to
+# Supabase and every other path to the app. Only the gateway has a port on the host.
+# Every value comes from .env next to this file, which install.sh writes.
+name: tamari
+
+services:
+  db:
+    image: public.ecr.aws/supabase/postgres:17.11.0.011
+    restart: unless-stopped
+    volumes:
+      # Runs once, on an empty data volume: the passwords of the roles the services log in as.
+      - ./db-init.sql:/docker-entrypoint-initdb.d/migrations/99-tamari.sql:ro
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      JWT_EXP: 3600
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  auth:
+    image: public.ecr.aws/supabase/gotrue:v2.197.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      mail-templates:
+        condition: service_started
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${APP_URL}/auth/v1
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: ${APP_URL}
+      GOTRUE_URI_ALLOW_LIST: ${APP_URL}/**
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_ISSUER: ${APP_URL}/auth/v1
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      GOTRUE_MAILER_OTP_LENGTH: 6
+      GOTRUE_MAILER_OTP_EXP: 3600
+      GOTRUE_MAILER_URLPATHS_INVITE: ${APP_URL}/auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${APP_URL}/auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: ${APP_URL}/auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${APP_URL}/auth/v1/verify
+      # The repo's sign-in mail, with the code the sign-in screen asks for (Auth's own has none).
+      # A first-time address gets "confirmation", a returning one "magic_link", as in supabase/config.toml.
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: Your sign-in code
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: Your sign-in code
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: http://mail-templates:8088/email/magic_link.html
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: http://mail-templates:8088/email/confirmation.html
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_FROM}
+      GOTRUE_SMTP_SENDER_NAME: Tamari
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Auth takes mail templates only by URL: this serves supabase/templates on the compose network.
+  mail-templates:
+    image: busybox:1.37.0
+    restart: unless-stopped
+    command: httpd -f -p 8088 -h /www
+    volumes:
+      - ../supabase/templates:/www/email:ro
+
+  rest:
+    image: public.ecr.aws/supabase/postgrest:v16.5
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      # The same schemas as supabase/config.toml.
+      PGRST_DB_SCHEMAS: public,graphql_public,miso,app
+      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
+      PGRST_DB_MAX_ROWS: 1000
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+
+  realtime:
+    image: public.ecr.aws/supabase/realtime:v2.151.3
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      default:
+        # Realtime reads its tenant from the host name's first label; SEED_SELF_HOST creates "realtime-dev".
+        aliases: [realtime-dev.supabase-realtime]
+    environment:
+      PORT: 4000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: SET search_path TO _realtime
+      DB_ENC_KEY: ${REALTIME_DB_ENC_KEY}
+      API_JWT_SECRET: ${JWT_SECRET}
+      METRICS_JWT_SECRET: ${JWT_SECRET}
+      SECRET_KEY_BASE: ${REALTIME_SECRET_KEY_BASE}
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      APP_NAME: realtime
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
+
+  kong:
+    image: public.ecr.aws/supabase/kong:2.8.1
+    restart: unless-stopped
+    # No wait for the app: kong looks a service up when a request comes, and the app's start needs kong.
+    depends_on: [auth, rest, realtime]
+    ports:
+      - ${HTTP_PORT}:8000
+    volumes:
+      - ./kong.yml:/home/kong/kong.yml:ro
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      # A recreated container (an upgrade, a changed setting) gets a new address: look it up again soon.
+      KONG_DNS_VALID_TTL: 5
+      KONG_DNS_NOT_FOUND_TTL: 1
+      # No pooled connections to the app: after a rebuild the old server stops, and a request sent
+      # on its idle connection would fail (a POST is not retried).
+      KONG_UPSTREAM_KEEPALIVE_POOL_SIZE: 0
+      KONG_PLUGINS: request-transformer,cors
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+
+  app:
+    build:
+      context: ..
+      dockerfile: selfhost/Dockerfile
+    restart: unless-stopped
+    volumes:
+      # The company's spaces and spaces.json, with their git history (README.md, "Spaces").
+      - spaces:/app/workspaces
+    sysctls:
+      # A rebuild starts the new server on the same port before the old one stops (serve.ts
+      # --reuse-port). This hands connections still waiting at the old one to the new one, not a reset.
+      net.ipv4.tcp_migrate_req: 1
+    depends_on:
+      db:
+        condition: service_healthy
+      # Auth creates auth.users on its first start, and the shell's migrations refer to it.
+      auth:
+        condition: service_healthy
+      # The service-account setup reaches Auth through the gateway.
+      kong:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: ${APP_URL}
+      SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+      SUPABASE_SECRET_KEY: ${SERVICE_ROLE_KEY}
+
+volumes:
+  db-data:
+  spaces:

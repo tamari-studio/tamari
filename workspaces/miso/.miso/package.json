@@ -1,0 +1,7 @@
+{
+  "name": "space-miso",
+  "private": true,
+  "dependencies": {
+    "cn": "^0.2.6"
+  }
+}

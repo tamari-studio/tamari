@@ -1,0 +1,5 @@
+{
+  "title": "Email checker",
+  "space": "Email checker",
+  "job": "Upload a contacts file and check every address: syntax, throwaway domains, shared inboxes and mail servers."
+}

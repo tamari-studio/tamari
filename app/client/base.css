@@ -1,0 +1,166 @@
+/* Host CSS variables. A space's theme (font, color, radius) overrides these on <html> at
+   runtime — see theme.ts. The default look is Tamari's own brand: cool
+   ink-tinted neutrals instead of pure grey (ink #0f1220 for text and the main action, the page's
+   near-white ground for the chrome), and the periwinkle --brand-* colours for the few places the
+   brand shows (sign-in, focus, the shadows' lift). Muted text is darker than before so it passes
+   WCAG AA: 5.4:1 on white and 5.0:1 on --muted (theme.test.ts checks it); the old grey was 3.4
+   and 3.1. */
+:root {
+  --brand-ground: #f5f6fb;
+  --brand-mist: #dfe6fb;
+  --brand-sky: #a8b8f0;
+  --brand-core: #7f97ea;
+  --brand-deep: #3a489c;
+  --lift: rgb(40 55 120);
+
+  --background: oklch(1 0 0);
+  --foreground: #0f1220;
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: #0f1220;
+  --primary-foreground: oklch(1 0 0);
+  --muted: #f3f4fa;
+  --muted-foreground: #626981;
+  --accent: rgb(15 18 32 / 0.06);
+  --accent-foreground: var(--foreground);
+  --success: oklch(0.527 0.154 150.069);
+  --destructive: oklch(0.58 0.22 27);
+  --border: rgb(15 18 32 / 0.08);
+  /* Follows a preset's foreground and background, so a coloured theme gets matching inputs. */
+  --input: color-mix(in srgb, var(--foreground) 13%, var(--background));
+  --ring: color-mix(in srgb, var(--brand-deep) 70%, var(--background));
+  --secondary: var(--accent);
+  --secondary-foreground: var(--accent-foreground);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --default-sans: ui-sans-serif, system-ui, sans-serif;
+  --sans: var(--default-sans);
+  --default-mono: 'Geist Mono', ui-monospace, monospace;
+  --mono: var(--default-mono);
+  /* Tamari's two brand faces: Zen Kaku Gothic New for headlines, M PLUS 1 for the
+     wordmark. loadBrandFonts() (theme.ts) loads them; a font preset replaces both (themeVars). */
+  --display: 'Zen Kaku Gothic New', var(--sans);
+  --wordmark: 'M PLUS 1', var(--sans);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --popover: oklch(0.205 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(1 0 0 / 0.1);
+  --success: oklch(0.627 0.194 149.214);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(0.35 0 0);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-muted font-sans text-foreground;
+  }
+}
+
+/* The sign-in and waiting screens: the landing page's periwinkle sky, so going from the site to
+   the app feels like one place. Not themed: they show before the organisation's theme loads. */
+.miso-brand-ground {
+  background:
+    radial-gradient(75% 65% at 82% 0%, color-mix(in srgb, var(--brand-core) 30%, transparent), transparent),
+    radial-gradient(60% 55% at 0% 100%, color-mix(in srgb, var(--brand-sky) 26%, transparent), transparent),
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-sky) 46%, var(--brand-ground)) 0%,
+      color-mix(in srgb, var(--brand-mist) 62%, var(--brand-ground)) 48%, var(--brand-ground) 100%);
+}
+
+/* Overlay scrollbars, app-wide (lib/scrollbars.ts). No track; the thumb only
+   shows while its element scrolls. In @layer base so utilities like
+   [scrollbar-width:none] still win. Safari lacks scrollbar-color, so it gets
+   the ::-webkit-scrollbar version. */
+@layer base {
+  @supports (scrollbar-color: auto) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+    }
+    [data-scrolling] {
+      scrollbar-color: color-mix(in oklch, var(--foreground) 25%, transparent) transparent;
+    }
+  }
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb,
+    ::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      border-radius: 9999px;
+    }
+    [data-scrolling]::-webkit-scrollbar-thumb {
+      background: color-mix(in oklch, var(--foreground) 25%, transparent);
+    }
+  }
+}
+
+/* Folder tabs. The active tab flares into the sheet below with concave bottom
+   corners, like a file folder tab. Its edge continues the sheet's 1px ring
+   (the first layer of --shadow-xs), drawn opaque so it doesn't double up
+   where it meets that ring. */
+.miso-folder-tab {
+  --tab-r: var(--radius-lg);
+  --sheet-edge: color-mix(in srgb, var(--muted), black 6%);
+}
+.miso-folder-tab::before,
+.miso-folder-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: var(--tab-r);
+  height: var(--tab-r);
+  pointer-events: none;
+  --flare: transparent calc(var(--tab-r) - 1.5px), var(--sheet-edge) calc(var(--tab-r) - 1px),
+    var(--sheet-edge) calc(var(--tab-r) - 0.5px), var(--background) var(--tab-r);
+}
+.miso-folder-tab::before {
+  right: 100%;
+  background: radial-gradient(circle at 0 0, var(--flare));
+}
+.miso-folder-tab::after {
+  left: 100%;
+  background: radial-gradient(circle at 100% 0, var(--flare));
+}
+/* Top and sides, stopping where the flares take over. */
+.miso-folder-tab-edge {
+  position: absolute;
+  inset: -1px -1px var(--tab-r);
+  border: 1px solid var(--sheet-edge);
+  border-bottom: 0;
+  border-radius: calc(var(--tab-r) + 1px) calc(var(--tab-r) + 1px) 0 0;
+  pointer-events: none;
+}
