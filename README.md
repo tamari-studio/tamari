@@ -76,3 +76,7 @@ into it with the `miso` command (`miso init`, `miso install`, `miso update`). Se
 
 Tamari was called miso. The `miso` command, the `.miso/` folders, the `@miso/*` packages, the
 `MISO_*` variables and the `miso` database schema keep that name.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).
